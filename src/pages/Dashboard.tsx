@@ -198,11 +198,11 @@ export default function Dashboard() {
 
       <section className="card mt-5 p-5">
         <h2 className="mb-3 text-[17px] font-bold">Client Snapshot</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {clients.map((c) => (
-            <button key={c.id} className="flex items-center gap-3 rounded-lg bg-surface-2 p-4 text-left hover:bg-surface-2/70" onClick={() => nav("/clients")}>
+            <button key={c.id} className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-2 p-4 text-left hover:bg-surface-2/70" onClick={() => nav("/clients")}>
               <Avatar name={c.name} url={c.avatar_url} className="h-9 w-9 shrink-0 text-xs" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{c.name}</p>
                 <p className="truncate text-xs text-faint">{c.title}, {c.company}</p>
               </div>

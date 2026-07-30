@@ -124,7 +124,8 @@ export default function EodReports() {
   const [date, setDate] = useState<string>("all");
   const [blockersOnly, setBlockersOnly] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const tour = usePageTour(TOUR_KEY);
+  // Tour no longer auto-opens on EOD — only via the "Replay" button below.
+  const tour = usePageTour(TOUR_KEY, false);
 
   // ---- the report you're filing: drafted from the board, edited and submitted ----
   const today = todayIso();
