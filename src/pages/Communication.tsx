@@ -1,0 +1,229 @@
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Sparkles, Mail, AlertTriangle, MailQuestion } from "lucide-react";
+import type { Message } from "@/types/db";
+import { Badge, PageHeader } from "@/components/ui";
+import { initials } from "@/lib/utils";
+import { generate } from "@/lib/ai";
+import { useClients, useMessages } from "@/data/hooks";
+import { useSlaSettings } from "@/store/slaSettings";
+import { dayLength, formatDuration, isBreaching, responseHours, waitingHours } from "@/lib/sla";
+import { useFollowUps } from "@/hooks/useFollowUps";
+
+const TABS = ["All", "Needs Follow-up", "Urgent", "Awaiting Reply", "Delegated"] as const;
+const categoryLabel: Record<string, string> = { urgent: "Urgent", reply: "Reply", delegate: "Delegate", archive: "Archive" };
+// "Needs Follow-up" is resolved against the flag list, not a field on the message,
+// so it stays in lockstep with the badge count everywhere else.
+const TAB_FILTER: Record<(typeof TABS)[number], (m: Message) => boolean> = {
+  All: () => true,
+  "Needs Follow-up": () => true,
+  Urgent: (m) => m.category === "urgent",
+  "Awaiting Reply": (m) => m.category === "reply",
+  Delegated: (m) => m.category === "delegate",
+};
+
+export default function Communication() {
+  const { data: messages = [], isLoading } = useMessages();
+  const { data: clients = [] } = useClients();
+  const cfg = useSlaSettings((s) => s.config);
+  const dl = dayLength(cfg);
+  const clientFor = (m: Message) =>
+    clients.find((c) => c.id === m.client_id || c.name === m.client_name) ?? null;
+  const { flags } = useFollowUps();
+  const deadThreads = flags.filter((f) => f.kind === "dead_thread");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("All");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Deep link from the client activity timeline: /communication?message=<id>
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const id = params.get("message");
+    if (!id) return;
+    setSelectedId(id);
+    setTab("All"); // the linked email may not be in the current tab
+    setParams({}, { replace: true });
+  }, [params, setParams]);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const deadIds = new Map(deadThreads.map((f) => [f.itemId, f]));
+  const list =
+    tab === "Needs Follow-up"
+      ? messages.filter((m) => deadIds.has(m.id))
+      : messages.filter(TAB_FILTER[tab]);
+  const selected = messages.find((m) => m.id === selectedId) ?? list[0] ?? null;
+
+  useEffect(() => { setDraft(""); }, [selectedId]);
+
+  async function generateDraft() {
+    if (!selected) return;
+    setBusy(true);
+    setDraft("");
+    try {
+      const out = await generate({
+        tool: "quick_action",
+        format: "AI Draft Response",
+        inputs: { from: selected.sender_name, subject: selected.subject, message: selected.body },
+      });
+      setDraft(out);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader title="Communication Center" subtitle="Triage, draft, and manage executive communications" />
+
+      <div className="card mb-4 p-3">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-muted">
+          {[
+            "Connect Gmail in Integrations (or use the samples below)",
+            "Pick a message to triage",
+            "Generate an AI draft reply",
+            "Copy or send your response",
+          ].map((step, i) => (
+            <span key={i} className="flex items-center gap-2">
+              {i > 0 && <span className="text-faint">·</span>}
+              <span className="flex items-center gap-1.5">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/20 text-[10px] font-semibold text-accent-soft">
+                  {i + 1}
+                </span>
+                {step}
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-4 flex gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${tab === t ? "bg-accent text-white" : "bg-surface-2 text-muted hover:text-zinc-100"}`}
+          >
+            {t}
+            {t === "Needs Follow-up" && deadThreads.length > 0 && (
+              <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tab === t ? "bg-white/20" : "bg-amber-500/20 text-amber-400"}`}>
+                {deadThreads.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-faint">Loading messages…</p>
+      ) : messages.length === 0 ? (
+        <div className="card p-10 text-center text-sm text-faint">No messages yet. Connect Gmail from Integrations to populate your inbox.</div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="card p-3">
+            <p className="px-2 pb-2 text-xs text-faint">{list.length} messages</p>
+            <div className="space-y-1">
+              {list.map((m) => {
+                const late = isBreaching(m, clientFor(m), cfg);
+                const waiting = waitingHours(m, cfg);
+                // Only an UNANSWERED breach is actionable — that's what gets the alarm
+                // styling. An answered-but-late thread is history: worth recording, but
+                // flagging it red implies work that no longer exists.
+                const breached = late && waiting !== null;
+                const missed = late && waiting === null;
+                const answeredIn = responseHours(m, cfg);
+                return (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedId(m.id)}
+                  className={`flex w-full gap-3 rounded-lg p-3 text-left transition-colors ${selected?.id === m.id ? "bg-surface-2" : "hover:bg-surface-2"} ${breached ? "border border-red-500/40 bg-red-500/5" : ""}`}
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-semibold text-accent-soft">
+                    {initials(m.sender_name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate text-sm font-medium">{m.sender_name}</span>
+                      <span className="text-[11px] text-faint">{m.time}</span>
+                    </div>
+                    <p className="truncate text-sm">{m.subject}</p>
+                    <p className="truncate text-xs text-faint">{m.preview}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {m.direction === "outbound" && (
+                        <span className="pill bg-sky-500/15 text-sky-400">Sent</span>
+                      )}
+                      <Badge tone={m.category}>{categoryLabel[m.category]}</Badge>
+                      {deadIds.has(m.id) && (
+                        <span className="pill bg-amber-500/15 text-amber-400">
+                          <MailQuestion size={11} />
+                          {deadIds.get(m.id)!.reason}
+                        </span>
+                      )}
+                      {breached && (
+                        <span className="pill bg-red-500/15 text-red-400">
+                          <AlertTriangle size={11} />
+                          SLA Breached · waiting {formatDuration(waiting!, dl)}
+                        </span>
+                      )}
+                      {missed && answeredIn !== null && (
+                        <span className="pill bg-zinc-500/15 text-faint">
+                          Missed SLA · replied in {formatDuration(answeredIn, dl)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+                );
+              })}
+              {list.length === 0 && (
+                <p className="py-6 text-center text-xs text-faint">
+                  {tab === "Needs Follow-up" ? "Nothing is waiting on a reply." : "Nothing in this view."}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="card p-5">
+            {selected ? (
+              <>
+                <div className="flex items-center gap-3 border-b border-border pb-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-xs font-semibold text-accent-soft">
+                    {initials(selected.sender_name)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{selected.sender_name}</p>
+                    {selected.client_title && <p className="text-xs text-faint">{selected.client_title}</p>}
+                  </div>
+                  <Badge tone={selected.category}>{categoryLabel[selected.category]}</Badge>
+                </div>
+
+                <div className="mt-4">
+                  <p className="field-label">Original Message</p>
+                  <div className="rounded-lg bg-surface-2 p-3">
+                    <p className="text-sm font-medium">{selected.subject}</p>
+                    <p className="mt-1 text-sm text-muted">{selected.body}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="field-label mb-0">AI Draft Response</p>
+                    <button className="btn-primary py-1.5" onClick={generateDraft} disabled={busy}>
+                      <Sparkles size={14} /> {busy ? "Drafting…" : "AI Draft Response"}
+                    </button>
+                  </div>
+                  {draft ? (
+                    <pre className="whitespace-pre-wrap rounded-lg bg-surface-2 p-3 text-sm text-zinc-200">{draft}</pre>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-8 text-center text-faint">
+                      <Mail size={24} />
+                      <p className="text-xs">Click "AI Draft Response" to generate a professional reply</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : <p className="py-10 text-center text-sm text-faint">Select a message.</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
