@@ -185,9 +185,11 @@ export function Sidebar({ onNavigate, forceExpanded }: { onNavigate?: () => void
     >
       <div className="flex items-start justify-between gap-2 px-5 py-5">
         <div className="min-w-0">
-          {/* Same wordmark, recoloured per theme: light-ink for dark bg, dark-ink for light bg. */}
-          <img src="/logo-light.png" alt="MadeEA" className="h-7 w-auto [[data-theme=light]_&]:hidden" />
-          <img src="/logo-dark.png" alt="MadeEA" className="hidden h-7 w-auto [[data-theme=light]_&]:block" />
+          {/* Same wordmark, recoloured per theme: light-ink for dark bg, dark-ink for
+              light bg. max-w-none overrides Tailwind's img max-width:100% so the
+              wordmark keeps its true aspect ratio in the narrow header row. */}
+          <img src="/logo-light.png" alt="MadeEA" className="h-6 w-auto max-w-none [[data-theme=light]_&]:hidden" />
+          <img src="/logo-dark.png" alt="MadeEA" className="hidden h-6 w-auto max-w-none [[data-theme=light]_&]:block" />
           <p className="mt-2 text-[10.5px] font-bold uppercase tracking-[0.22em] text-accent">Command Center</p>
         </div>
         {!forceExpanded && (

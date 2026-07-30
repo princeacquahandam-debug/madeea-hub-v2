@@ -127,13 +127,13 @@ export function PageTour({
  * Drives a PageTour: auto-opens the first time (per storageKey), and returns a
  * `replay` you can wire to a button.
  */
-export function usePageTour(storageKey: string) {
+export function usePageTour(storageKey: string, autoStart = true) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (!localStorage.getItem(storageKey)) {
+    if (autoStart && !localStorage.getItem(storageKey)) {
       const t = setTimeout(() => setOpen(true), 700);
       return () => clearTimeout(t);
     }
-  }, [storageKey]);
+  }, [storageKey, autoStart]);
   return { open, replay: () => setOpen(true), close: () => setOpen(false) };
 }

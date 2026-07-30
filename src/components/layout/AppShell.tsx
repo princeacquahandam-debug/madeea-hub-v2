@@ -35,7 +35,7 @@ export function AppShell() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar onMenu={() => setNavOpen(true)} />
         <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6">
             <GuideCard />
             {/* Keyed by path so page content fades up on every route change. */}
             <div key={location.pathname} className="page-enter">

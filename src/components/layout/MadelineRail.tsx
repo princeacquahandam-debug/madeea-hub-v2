@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Sparkles } from "lucide-react";
+import { ArrowUp, Sparkles, PanelRightClose } from "lucide-react";
 import { assistantChat, type ChatMessage } from "@/lib/ai";
 import { QUICK_RAIL } from "@/lib/constants";
+import { useUI } from "@/store/ui";
 import { Orb } from "./Orb";
 
 const GREETING = "Hi, I'm Madeline. Ask me anything, or tap a quick action below to get started.";
 
 // The persistent AI assistant docked in the right rail (mockup: "Madeline AI").
 export function MadelineRail() {
+  const { madelineOpen, toggleMadeline } = useUI();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -34,6 +36,31 @@ export function MadelineRail() {
     }
   }
 
+  // Collapsed → a floating launcher with a greeting bubble (xl only; below xl the
+  // AssistantWidget handles chat).
+  if (!madelineOpen) {
+    return (
+      <div className="fixed bottom-6 right-6 z-40 hidden items-center gap-3 xl:flex" style={{ animation: "slideInChip 0.35s cubic-bezier(0.22,1,0.36,1)" }}>
+        <button
+          onClick={toggleMadeline}
+          className="glass whitespace-nowrap rounded-2xl rounded-br-sm px-4 py-2.5 text-sm font-semibold shadow-lg"
+          aria-label="Open Madeline AI"
+        >
+          Hi! How can I help you today?
+        </button>
+        <button
+          onClick={toggleMadeline}
+          title="Open Madeline AI"
+          aria-label="Open Madeline AI"
+          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105"
+          style={{ background: "var(--glass)", border: "1px solid var(--c-border)", boxShadow: "0 10px 28px rgba(0,0,0,0.35)", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)" }}
+        >
+          <Orb size={46} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <aside
       className="hidden xl:flex h-full w-[322px] flex-col border-l border-border p-5 backdrop-blur-2xl"
@@ -42,13 +69,21 @@ export function MadelineRail() {
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border pb-3.5">
         <Orb size={48} />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-base font-extrabold tracking-tight">Madeline AI</p>
           <p className="flex items-center gap-1.5 text-xs font-semibold text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" style={{ animation: "flagPulse 1.6s infinite" }} />
             Online · ready to help
           </p>
         </div>
+        <button
+          onClick={toggleMadeline}
+          title="Minimize"
+          aria-label="Minimize Madeline"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-[var(--chip-bg)] hover:text-text"
+        >
+          <PanelRightClose size={18} />
+        </button>
       </div>
 
       {/* Messages */}

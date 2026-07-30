@@ -15,16 +15,19 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
   return (
     <>
     <header className="glass relative z-40 flex h-[66px] items-center gap-4 border-b border-border px-4 lg:px-6">
-      <button className="btn-ghost lg:hidden -ml-2" onClick={onMenu} aria-label="Open menu">
-        <Menu size={18} />
-      </button>
-      {/* Logo for mobile — the sidebar (which normally carries it) is hidden below
-          lg. Use the compact square icon so it never gets squeezed by the flex row. */}
-      <img
-        src="/icon.png"
-        alt="MadeEA"
-        className="h-7 w-7 shrink-0 object-contain lg:hidden"
-      />
+      {/* Menu + logo grouped tightly on mobile (the sidebar, which normally
+          carries the logo, is hidden below lg). Compact square icon so it never
+          gets squeezed by the flex row. */}
+      <div className="-ml-1 flex items-center gap-1.5 lg:hidden">
+        <button
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-[var(--chip-bg)] hover:text-text"
+          onClick={onMenu}
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+        <img src="/icon.png" alt="MadeEA" className="h-7 w-7 shrink-0 object-contain" />
+      </div>
       <span className="hidden sm:block text-sm font-medium text-muted">{todayLabel()}</span>
       <div className="ml-auto flex items-center gap-2">
         <div className="hidden items-center gap-2 sm:flex" data-tour="search">

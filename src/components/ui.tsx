@@ -45,17 +45,20 @@ export function Modal({ open, onClose, children }: { open: boolean; onClose: () 
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto bg-black/70 sm:items-center sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
+      {/* Bottom sheet on mobile, centered card on sm+. */}
       <div
-        className="modal-panel w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl p-6 relative"
+        className="modal-panel relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl rounded-b-none p-6 pb-8 sm:max-h-[85vh] sm:rounded-b-2xl sm:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Grab handle (mobile only). */}
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--border-strong)] sm:hidden" />
         <button
-          className="absolute top-4 right-4 text-faint hover:text-text"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-faint transition-colors hover:bg-[var(--chip-bg)] hover:text-text"
           onClick={onClose}
           aria-label="Close"
         >

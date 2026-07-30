@@ -174,8 +174,16 @@
   .greeting-title { font-size: 30px; }
 }
 
-/* Page entrance — content fades up on route change. */
-.page-enter { animation: fadeUp 0.4s ease both; }
+/* Page entrance — a pure OPACITY fade (no transform). A transform here would (a)
+   linger as the containing block for `position: fixed` modals (trapping their
+   backdrop in the content area) and (b) promote the wrapper to a compositing
+   layer that could drop its first child from paint. Opacity does neither. */
+.page-enter { animation: cc-fade 0.4s ease both; }
+
+@keyframes slideInChip {
+  0% { opacity: 0; transform: translateX(18px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
 
 /* Sidebar link switching — active bar grows, item slides in, icon pops. */
 @keyframes navItemIn {
@@ -368,6 +376,8 @@
   /* Glass panels — translucent, blurred, sitting over the ambient layer. */
   .card {
     position: relative;
+    /* Allow cards to shrink inside flex/grid tracks (prevents mobile overflow). */
+    min-width: 0;
     background: var(--glass);
     border: 1px solid var(--c-border);
     -webkit-backdrop-filter: blur(22px) saturate(1.35);
