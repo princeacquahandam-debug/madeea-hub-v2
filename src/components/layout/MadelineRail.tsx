@@ -63,7 +63,7 @@ export function MadelineRail() {
 
   return (
     <aside
-      className="hidden xl:flex h-full w-[322px] flex-col border-l border-border p-5 backdrop-blur-2xl"
+      className="hidden xl:flex h-full w-[322px] flex-col border-l border-border p-5 backdrop-blur-lg"
       style={{ background: "var(--glass)" }}
     >
       {/* Header */}

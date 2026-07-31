@@ -86,7 +86,7 @@ export function Sidebar({ onNavigate, forceExpanded }: { onNavigate?: () => void
   if (collapsed) {
     return (
       <aside
-        className="flex h-full w-20 flex-col items-center border-r border-border py-4 backdrop-blur-2xl"
+        className="flex h-full w-20 flex-col items-center border-r border-border py-4 backdrop-blur-lg"
         style={{ background: "var(--sidebar-bg)" }}
       >
         <img src="/icon.png" alt="MadeEA" className="mb-3 h-8 w-8 object-contain" />
@@ -180,7 +180,7 @@ export function Sidebar({ onNavigate, forceExpanded }: { onNavigate?: () => void
   // ---------------------------------------------------------------- expanded
   return (
     <aside
-      className="flex h-full w-64 flex-col border-r border-border backdrop-blur-2xl"
+      className="flex h-full w-64 flex-col border-r border-border backdrop-blur-lg"
       style={{ background: "var(--sidebar-bg)" }}
     >
       <div className="flex items-start justify-between gap-2 px-5 py-5">

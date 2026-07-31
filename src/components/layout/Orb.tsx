@@ -8,7 +8,7 @@
 const LOGICAL = 126;
 // Many more particles than orbit keyframes (60) — extras reuse orbits with
 // distinct durations/delays so the cloud looks dense without new keyframes.
-const COUNT = 300;
+const COUNT = 150;
 // Deterministic pseudo-random so each particle keeps a stable size/shade.
 const rand = (n: number) => {
   const x = Math.sin(n) * 43758.5453;
