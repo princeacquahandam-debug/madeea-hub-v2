@@ -373,10 +373,12 @@
     position: relative;
     /* Allow cards to shrink inside flex/grid tracks (prevents mobile overflow). */
     min-width: 0;
-    /* No backdrop-filter here: with the ambient background animating every frame,
-       blurring behind every card was the main source of lag. A more opaque solid
-       background keeps the panels readable and paints cheaply. */
-    background: var(--card-bg);
+    /* Frosted glass: 50%-opacity surface tint over a blurred backdrop, so the
+       ambient background reads through. Uses the surface channel token, so it
+       resolves per theme (white in light, deep navy in dark). */
+    background: rgb(var(--c-surface) / 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--c-border);
     box-shadow: var(--shadow-card);
     transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
@@ -542,6 +544,13 @@
    tint under light so the hover is still perceptible. */
 [data-theme="light"] .hover\:bg-white\/5:hover {
   background-color: rgba(21, 46, 71, 0.05);
+}
+/* Nested "surface-2" rows (list items, snapshot cards) are cream by default.
+   Under light, make them white to match the request; a hairline border keeps
+   them separated from the white panel behind them so they don't disappear. */
+[data-theme="light"] .bg-surface-2 {
+  background-color: #ffffff;
+  border: 1px solid var(--c-border);
 }
 /* Amber/yellow accents (SLA "at risk", high priority, needs-prep) are too pale
    on a light background — darken to an amber that reads on white. */
